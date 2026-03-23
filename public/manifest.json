@@ -1,0 +1,17 @@
+{
+  "name": "AB SOLAR AGENT",
+  "short_name": "AB SOLAR",
+  "description": "Your personal AI solar consultant — cut your electricity bill by 90%",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#060c06",
+  "theme_color": "#F59E0B",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%23F59E0B'/><text y='.9em' font-size='80' x='10'>☀️</text></svg>",
+      "sizes": "192x192",
+      "type": "image/svg+xml"
+    }
+  ]
+}

@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AB SOLAR — Leads Dashboard</title>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:'DM Sans',sans-serif;background:#060c06;color:#f0f4f0;min-height:100vh;padding:20px}
+    .header{display:flex;align-items:center;justify-content:space-between;margin-bottom:28px;flex-wrap:wrap;gap:12px}
+    .header-title{font-family:'Outfit',sans-serif;font-size:24px;font-weight:800}
+    .header-title span{background:linear-gradient(90deg,#F59E0B,#FDE68A);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+    .back-btn{display:inline-flex;align-items:center;gap:8px;background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.25);border-radius:10px;padding:8px 16px;color:#F59E0B;text-decoration:none;font-size:13px;font-weight:600;transition:all 0.2s}
+    .back-btn:hover{background:rgba(245,158,11,0.2)}
+    .stats{display:flex;gap:14px;margin-bottom:24px;flex-wrap:wrap}
+    .stat-card{flex:1;min-width:120px;background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.2);border-radius:14px;padding:16px;text-align:center}
+    .stat-val{font-family:'Outfit',sans-serif;font-size:28px;font-weight:800;color:#F59E0B}
+    .stat-label{font-size:12px;color:#4a5e4a;margin-top:4px}
+    .leads-table{width:100%;border-collapse:collapse;background:rgba(10,18,10,0.8);border-radius:14px;overflow:hidden;border:1px solid rgba(255,255,255,0.07)}
+    .leads-table th{background:rgba(245,158,11,0.12);padding:13px 14px;text-align:left;font-family:'Outfit',sans-serif;font-size:12px;font-weight:700;letter-spacing:0.5px;color:#F59E0B;white-space:nowrap}
+    .leads-table td{padding:12px 14px;font-size:13px;border-top:1px solid rgba(255,255,255,0.04);vertical-align:top}
+    .leads-table tr:hover td{background:rgba(245,158,11,0.04)}
+    .badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600}
+    .badge-home{background:rgba(16,185,129,0.15);color:#10B981;border:1px solid rgba(16,185,129,0.25)}
+    .badge-biz{background:rgba(245,158,11,0.15);color:#F59E0B;border:1px solid rgba(245,158,11,0.25)}
+    .no-leads{text-align:center;padding:60px 20px;color:#4a5e4a}
+    .no-leads .icon{font-size:48px;margin-bottom:14px}
+    .refresh-btn{background:linear-gradient(135deg,#F59E0B,#EA580C);color:#000;border:none;border-radius:10px;padding:9px 20px;font-family:'Outfit',sans-serif;font-size:13px;font-weight:700;cursor:pointer}
+    .phone-link{color:#F59E0B;text-decoration:none;font-weight:600}
+    .phone-link:hover{text-decoration:underline}
+    @media(max-width:640px){
+      .leads-table{display:block;overflow-x:auto}
+      .header{flex-direction:column;align-items:flex-start}
+    }
+  </style>
+</head>
+<body>
+
+  <div class="header">
+    <div class="header-title">☀️ AB SOLAR — <span>Leads Dashboard</span></div>
+    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+      <button class="refresh-btn" onclick="loadLeads()">🔄 Refresh</button>
+      <a href="/" class="back-btn">← Back to Chatbot</a>
+    </div>
+  </div>
+
+  <div class="stats" id="statsRow">
+    <div class="stat-card"><div class="stat-val" id="totalCount">—</div><div class="stat-label">Total Leads</div></div>
+    <div class="stat-card"><div class="stat-val" id="todayCount">—</div><div class="stat-label">Today</div></div>
+    <div class="stat-card"><div class="stat-val" id="avgBill">—</div><div class="stat-label">Avg Bill (Rs.)</div></div>
+    <div class="stat-card"><div class="stat-val" id="homeCount">—</div><div class="stat-label">Residential</div></div>
+  </div>
+
+  <div id="leadsContainer">
+    <div class="no-leads"><div class="icon">⏳</div><div>Loading leads...</div></div>
+  </div>
+
+  <script>
+    function loadLeads() {
+      fetch("/api/leads")
+        .then(function(r){ return r.json(); })
+        .then(function(data) {
+          var leads = data.leads || [];
+          updateStats(leads);
+          renderTable(leads);
+        })
+        .catch(function() {
+          document.getElementById("leadsContainer").innerHTML =
+            '<div class="no-leads"><div class="icon">⚠️</div><div>Could not load leads. Make sure the server is running.</div></div>';
+        });
+    }
+
+    function updateStats(leads) {
+      var today = new Date().toDateString();
+      var todayLeads = leads.filter(function(l){ return new Date(l.timestamp).toDateString() === today; });
+      var bills = leads.filter(function(l){ return l.bill_amount; }).map(function(l){ return parseInt(l.bill_amount) || 0; });
+      var avgBill = bills.length ? Math.round(bills.reduce(function(a,b){return a+b;},0) / bills.length) : 0;
+      var homeLeads = leads.filter(function(l){ return l.property_type && l.property_type.toLowerCase().includes("home"); });
+
+      document.getElementById("totalCount").textContent = leads.length;
+      document.getElementById("todayCount").textContent = todayLeads.length;
+      document.getElementById("avgBill").textContent = avgBill ? avgBill.toLocaleString("en-IN") : "—";
+      document.getElementById("homeCount").textContent = homeLeads.length;
+    }
+
+    function renderTable(leads) {
+      var container = document.getElementById("leadsContainer");
+      if (!leads.length) {
+        container.innerHTML = '<div class="no-leads"><div class="icon">☀️</div><div style="font-size:16px;font-weight:600;margin-bottom:8px">No leads yet</div><div>Start sharing your chatbot link to capture leads!</div></div>';
+        return;
+      }
+
+      var html = '<table class="leads-table"><thead><tr>'
+        + '<th>#</th><th>Time</th><th>Name</th><th>Phone</th>'
+        + '<th>Bill</th><th>System</th><th>Location</th><th>Property</th>'
+        + '</tr></thead><tbody>';
+
+      leads.forEach(function(lead, i) {
+        var dt = new Date(lead.timestamp).toLocaleString("en-IN", { day:"2-digit", month:"short", hour:"2-digit", minute:"2-digit", hour12:true });
+        var isBiz = lead.property_type && (lead.property_type.toLowerCase().includes("business") || lead.property_type.toLowerCase().includes("office") || lead.property_type.toLowerCase().includes("factory"));
+        html += '<tr>'
+          + '<td style="color:#4a5e4a">' + (i + 1) + '</td>'
+          + '<td style="color:#4a5e4a;white-space:nowrap">' + dt + '</td>'
+          + '<td style="font-weight:600;color:#f0f4f0">' + (lead.name || "—") + '</td>'
+          + '<td><a class="phone-link" href="tel:' + (lead.phone_number||"") + '">' + (lead.phone_number || "—") + '</a></td>'
+          + '<td style="color:#F59E0B">' + (lead.bill_amount ? "Rs." + parseInt(lead.bill_amount).toLocaleString("en-IN") : "—") + '</td>'
+          + '<td style="color:#10B981">' + (lead.system_size || "—") + '</td>'
+          + '<td>' + (lead.location || "—") + '</td>'
+          + '<td>' + (lead.property_type ? '<span class="badge ' + (isBiz ? "badge-biz" : "badge-home") + '">' + lead.property_type + '</span>' : "—") + '</td>'
+          + '</tr>';
+      });
+
+      html += '</tbody></table>';
+      container.innerHTML = html;
+    }
+
+    loadLeads();
+    setInterval(loadLeads, 30000); // Auto-refresh every 30 seconds
+  </script>
+</body>
+</html>
